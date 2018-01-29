@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  vod:
+    image: registry.gitlab.com/ecasltd/gdrive-video-backend:latest
+    volumes:
+      - ./client_secret.json:/srv/app/client_secret.json
+    ports:
+      - 21935:80
