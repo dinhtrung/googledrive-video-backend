@@ -14,7 +14,7 @@ var TOKEN_DIR = __dirname + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'googleDriveAPI.json';
 var TEMP_DIR = __dirname + '/.temp/'
 var CHUNK_SIZE = 20000000
-var PORT = 80;
+var PORT = 8998;
 
 // Load client secrets from a local file.
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -31,8 +31,7 @@ function authorize(credentials, callback) {
   var clientSecret = credentials.web.client_secret;
   var clientId = credentials.web.client_id;
   var redirectUrl = credentials.web.redirect_uris[0];
-  var auth = new googleAuth();
-  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+  var oauth2Client = new googleAuth.OAuth2Client(clientId, clientSecret, redirectUrl);
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
@@ -48,7 +47,8 @@ function authorize(credentials, callback) {
 function getNewToken(oauth2Client, callback) {
   var authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: SCOPES
+    scope: SCOPES,
+    prompt: 'consent'
   });
   console.log('Authorize this app by visiting this url: ');
   console.log(authUrl)
@@ -183,27 +183,19 @@ function listFiles(auth, resp, filter) {
     q: filter, // visibility='anyoneCanFind' and
     fields: "nextPageToken, files(id, name, description, thumbnailLink)"
   }, function(err, response) {
+    console.log(response);
     if (err) {
       console.log('The API returned an error: ' + err);
+      resp.writeHead(500);
+      resp.end();
       return;
     }
-    var files = response.files;
-    if (files.length == 0) {
-      console.log('No files found.');
-    } else {
-      for (var i = 0; i < files.length; i++) {
-        var file = files[i];
-        console.log(i, file);
-        // var fileInfo = getInfoFromId(file.id)
-        // console.log(i, fileInfo);
-      }
-      resp.writeHead(200, {
-        "Content-Type": "application/json; charset=UTF-8",
-        "Access-Control-Allow-Origin": "*"
-      });
-      resp.write(JSON.stringify(files));
-      resp.end();
-    }
+    resp.writeHead(200, {
+      "Content-Type": "application/json; charset=UTF-8",
+      "Access-Control-Allow-Origin": "*"
+    });
+    resp.write(JSON.stringify(response.data.files));
+    resp.end();
   });
 }
 
