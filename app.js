@@ -157,6 +157,7 @@ function startLocalServer(oauth2Client){
   app.get('/', function(req, resp){
     let filter = "mimeType contains 'video' and visibility = 'anyoneWithLink'";
     if (req.query.parents) filter += " and parents in '" + req.query.parents + "'";
+    if (req.query.starred) filter += " and starred = " + req.query.starred;
     if (req.query.name) filter += " and name contains '" + req.query.name + "'";
     else if (req.query.text) filter += " and fulltext contains '" + req.query.text + "'";
     refreshTokenIfNeed(oauth2Client, oauth2Client => listFiles(oauth2Client, resp, filter));
