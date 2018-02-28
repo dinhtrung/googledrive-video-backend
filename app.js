@@ -3,9 +3,7 @@ var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 var express = require('express')
 var https = require('https')
-var endMw = require('express-end')
 var stream = require('stream');
-const getDuration = require('get-video-duration');
 var app = express()
 
 // If modifying these scopes, delete your previously saved credentials
@@ -139,9 +137,13 @@ function startLocalServer(oauth2Client){
           skipDefault = true
         }
         if (action == 'info'){
-          res.writeHead(200, {"Content-Type": "application/json"});
+          res.writeHead(200, {
+            "Content-Type": "application/json; charset=UTF-8",
+            "Access-Control-Allow-Origin": "*"
+          });
           res.write(JSON.stringify(fileInfo));
-          skipDefault = true;
+          res.end();
+          return;
         }
 
         if(!skipDefault){
@@ -156,7 +158,7 @@ function startLocalServer(oauth2Client){
   // /?name=test
   app.get('/', function(req, resp){
     let filter = "mimeType contains 'video' and visibility = 'anyoneWithLink'";
-    if (req.query.parents) filter += " and parents in '" + req.query.parents + "'";
+    if (req.query.parents) filter += " and '" + req.query.parents + "' in parents";
     if (req.query.starred) filter += " and starred = " + req.query.starred;
     if (req.query.name) filter += " and name contains '" + req.query.name + "'";
     else if (req.query.text) filter += " and fulltext contains '" + req.query.text + "'";
@@ -184,9 +186,8 @@ function listFiles(auth, resp, filter) {
     q: filter, // visibility='anyoneCanFind' and
     fields: "nextPageToken, files(id, name, description, thumbnailLink)"
   }, function(err, response) {
-    console.log(response);
     if (err) {
-      console.log('The API returned an error: ' + err);
+      console.error('The API returned an error: ' + err);
       resp.writeHead(500);
       resp.end();
       return;
@@ -273,7 +274,7 @@ function performRequest_download_start(req, res, access_token, fileInfo){
       videoDuration = data
     })
     .catch((error) => {
-      console.log(error)
+      console.error(error)
     })
 
     var echoStream = new stream.Writable()
@@ -355,7 +356,7 @@ function downloadFile(fileId, access_token, start, end, pipe, onEnd, onStart){
     readStream.on('close', () => {
     })
     readStream.on('error', (err) => {
-      console.log(err)
+      console.error(err)
     })
     onStart(readStream)
   }else{
@@ -481,22 +482,6 @@ function getInfoFromId(fileId){
 
 function addInfo(fileId, fileInfo){
   var info = {id: fileId, info: fileInfo}
-  info.getVideoLength = new Promise((resolve, reject) => {
-    if(!info.videoLength){
-      getDuration('http://127.0.0.1:' + PORT + '/' + fileId).then((duration) => {
-        info.videoLength = duration
-        resolve(duration)
-      })
-      .catch((error) => {
-        console.log(error);
-        reject(error)
-      })
-    }else{
-      resolve(info.videoLength)
-    }
-
-  })
-
   filesInfo.push(info)
 }
 
