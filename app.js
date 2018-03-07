@@ -87,6 +87,11 @@ function storeToken(token) {
 }
 
 function startLocalServer(oauth2Client){
+  app.all('/', function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    next();
+  });
   // Handle /code callback from Google
   app.get(/\/code/, function (req, res){
     if(req.query.code){
@@ -137,10 +142,7 @@ function startLocalServer(oauth2Client){
           skipDefault = true
         }
         if (action == 'info'){
-          res.writeHead(200, {
-            "Content-Type": "application/json; charset=UTF-8",
-            "Access-Control-Allow-Origin": "*"
-          });
+          res.writeHead(200);
           res.write(JSON.stringify(fileInfo));
           res.end();
           return;
@@ -162,7 +164,8 @@ function startLocalServer(oauth2Client){
     if (req.query.starred) filter += " and starred = " + req.query.starred;
     if (req.query.name) filter += " and name contains '" + req.query.name + "'";
     else if (req.query.text) filter += " and fulltext contains '" + req.query.text + "'";
-    refreshTokenIfNeed(oauth2Client, oauth2Client => listFiles(oauth2Client, resp, filter));
+    let pageSize = req.query.size || 20;
+    refreshTokenIfNeed(oauth2Client, oauth2Client => listFiles(oauth2Client, resp, filter, pageSize));
   });
 
   // Add 404
@@ -178,11 +181,12 @@ function startLocalServer(oauth2Client){
  *
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-function listFiles(auth, resp, filter) {
+function listFiles(auth, resp, filter, pageSize) {
   var service = google.drive('v3');
   service.files.list({
     auth: auth,
-    pageSize: 1000,
+    pageSize: pageSize,
+    orderBy: 'modifiedTime',
     q: filter, // visibility='anyoneCanFind' and
     fields: "nextPageToken, files(id, name, description, thumbnailLink)"
   }, function(err, response) {
@@ -193,8 +197,7 @@ function listFiles(auth, resp, filter) {
       return;
     }
     resp.writeHead(200, {
-      "Content-Type": "application/json; charset=UTF-8",
-      "Access-Control-Allow-Origin": "*"
+      "Content-Type": "application/json; charset=UTF-8"
     });
     resp.write(JSON.stringify(response.data.files));
     resp.end();
