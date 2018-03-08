@@ -142,7 +142,10 @@ function startLocalServer(oauth2Client){
           skipDefault = true
         }
         if (action == 'info'){
-          res.writeHead(200);
+          res.writeHead(200, {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "X-Requested-With"
+          });
           res.write(JSON.stringify(fileInfo));
           res.end();
           return;
