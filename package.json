@@ -20,6 +20,8 @@
   "dependencies": {
     "async": "^2.6.0",
     "express": "^4.16.2",
-    "googleapis": "^25.0.0"
+    "googleapis": "^25.0.0",
+    "mongodb": "^3.0.10",
+    "mongoose": "^5.1.5"
   }
 }
