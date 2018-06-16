@@ -5,6 +5,8 @@ var express = require('express')
 var https = require('https')
 var stream = require('stream');
 var app = express()
+// Using mongoose engine
+var mongoose = require('mongoose');
 
 // If modifying these scopes, delete your previously saved credentials
 var SCOPES = ['https://www.googleapis.com/auth/drive'];
@@ -204,6 +206,45 @@ function listFiles(auth, resp, filter, pageSize) {
     });
     resp.write(JSON.stringify(response.data.files));
     resp.end();
+     /* CREATING MONGODB INSTANCE */
+        this.video = response.data.files;
+        
+        this.videokeys = Object.keys(this.video);
+        Object.keys(video).forEach(key => {
+                
+                this.videos = video[key];
+               
+            })
+        
+
+        /* create model and connect to mongodb */
+
+        mongoose.connect('mongodb://localhost:27017/ecasvideos');
+        var db = mongoose.connection;
+
+        db.on('error', console.error.bind(console, 'Connection error'));
+        db.on('open', function(callback) {
+            console.log('Connected to database.');
+        });
+
+        /* create database schema */
+        var Schema = mongoose.Schema;
+        var videoSchema = new Schema({
+            id: String,
+            name: String,
+            description: String,
+            thumbnailLink: String
+        });
+        /* Create Database Model */
+
+        var Videos = mongoose.model('Videos', videoSchema);
+
+        /* Save file data info to database */
+
+        var NewVideo = new Videos({ id: videos.id, name: videos.name, description: videos.description, thumbnailLink: videos.thumbnailLink });
+        NewVideo.save();
+        console.log('Data successfully saved to database');
+    });
   });
 }
 
